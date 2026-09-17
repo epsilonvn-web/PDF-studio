@@ -702,7 +702,19 @@
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const scale = parseFloat(document.querySelector('input[name="scanQuality"]:checked').value || 2.0);
 
+        // Lấy kích thước trang đầu tiên (đơn vị PDF point, 72pt = 1 inch) để đặt
+        // kích thước slide cho khớp tỉ lệ thật của tài liệu, tránh bị kéo giãn/méo hình.
+        const firstPage = await pdf.getPage(1);
+        const baseViewport = firstPage.getViewport({ scale: 1 });
+        let layoutWidthIn = baseViewport.width / 72;
+        let layoutHeightIn = baseViewport.height / 72;
+        // PptxGenJS giới hạn kích thước layout trong khoảng ~1-56 inch mỗi chiều.
+        layoutWidthIn = Math.min(Math.max(layoutWidthIn, 1), 56);
+        layoutHeightIn = Math.min(Math.max(layoutHeightIn, 1), 56);
+
         let pptx = new PptxGenJS();
+        pptx.defineLayout({ name: 'PDF_PAGE_LAYOUT', width: layoutWidthIn, height: layoutHeightIn });
+        pptx.layout = 'PDF_PAGE_LAYOUT';
 
         for (let i = 1; i <= pdf.numPages; i++) {
             setStatusBar(`Đang tạo Slide PowerPoint cho trang ${i} / ${pdf.numPages}...`);
@@ -717,8 +729,20 @@
             await page.render({ canvasContext: ctx, viewport: viewport }).promise;
             const imgDataUrl = canvas.toDataURL('image/png');
 
+            // Kích thước ảnh thật của trang này (inch), giữ đúng tỉ lệ gốc.
+            const pageWIn = viewport.width / (72 * scale);
+            const pageHIn = viewport.height / (72 * scale);
+
+            // Co ảnh vừa khít bên trong khung slide (giữ nguyên tỉ lệ, không kéo méo),
+            // căn giữa nếu trang này có tỉ lệ khác trang đầu (ví dụ có trang nằm ngang xen kẽ).
+            const fitScale = Math.min(layoutWidthIn / pageWIn, layoutHeightIn / pageHIn);
+            const drawW = pageWIn * fitScale;
+            const drawH = pageHIn * fitScale;
+            const offsetX = (layoutWidthIn - drawW) / 2;
+            const offsetY = (layoutHeightIn - drawH) / 2;
+
             let slide = pptx.addSlide();
-            slide.addImage({ data: imgDataUrl, x: 0, y: 0, w: "100%", h: "100%" });
+            slide.addImage({ data: imgDataUrl, x: offsetX, y: offsetY, w: drawW, h: drawH });
         }
 
         setStatusBar("Đang xuất file PowerPoint (.pptx)...");
@@ -743,9 +767,13 @@
                 if (!text) return;
                 const y = item.transform[5];
                 const x = item.transform[4];
+                // Chiều cao chữ thực tế của item này (đơn vị PDF), dùng để ước lượng
+                // độ rộng ký tự trung bình thay vì số 5.5 cố định.
+                const fontHeight = Math.hypot(item.transform[2], item.transform[3]) || 10;
+                const charWidth = item.width && text.length ? item.width / text.length : fontHeight * 0.5;
                 let foundLine = lines.find(l => Math.abs(l.y - y) <= 4.5);
-                if (foundLine) foundLine.items.push({ x, str: text });
-                else lines.push({ y, items: [{ x, str: text }] });
+                if (foundLine) foundLine.items.push({ x, str: text, charWidth });
+                else lines.push({ y, items: [{ x, str: text, charWidth }] });
             });
 
             lines.sort((a, b) => b.y - a.y);
@@ -758,12 +786,15 @@
                 let lastX = null;
 
                 for (let it of line.items) {
-                    if (lastX === null || (it.x - lastX) > 18) {
+                    // Ngưỡng tách cột = khoảng trắng lớn hơn ~2.5 ký tự của chính chữ đó
+                    // (thay vì hằng số 18 cố định, sai lệch nhiều với cỡ chữ nhỏ/lớn).
+                    const gapThreshold = Math.max(it.charWidth * 2.5, 6);
+                    if (lastX === null || (it.x - lastX) > gapThreshold) {
                         rowCells.push(it.str);
                     } else {
                         rowCells[rowCells.length - 1] += " " + it.str;
                     }
-                    lastX = it.x + (it.str.length * 5.5);
+                    lastX = it.x + (it.str.length * it.charWidth);
                 }
                 if (rowCells.length > 0) pageRows.push(rowCells);
             }
