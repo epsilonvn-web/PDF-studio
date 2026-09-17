@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Studio Pro v9.0 - Multi-Engine Document & Scan Converter</title>
+    <!-- PDF-Lib CDN -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- SheetJS (xlsx) CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- PptxGenJS CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
+    <!-- JSZip CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Mammoth CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <!-- jsPDF CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 12px;
+        }
+        body {
+            background-color: #23272d;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .window {
+            width: 940px;
+            background-color: #ece9d8;
+            border: 2px solid #0055ea;
+            border-radius: 6px 6px 0 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .title-bar {
+            background: linear-gradient(180deg, #0058ee 0%, #3593ff 50%, #288eff 51%, #0055ea 100%);
+            color: #fff;
+            padding: 6px 10px;
+            font-weight: bold;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .title-bar-controls span {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            line-height: 14px;
+            text-align: center;
+            background: #d8e5fa;
+            color: #000;
+            border-radius: 2px;
+            margin-left: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .banner {
+            background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            color: white;
+        }
+        .banner-icon {
+            font-size: 26px;
+            margin-right: 12px;
+            background: #fff;
+            color: #1e3c72;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-weight: 900;
+        }
+        .banner-text {
+            font-size: 19px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+        .banner-text span {
+            color: #ffca28;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: #dfdac8;
+            padding: 6px 10px 0 10px;
+            border-bottom: 1px solid #999;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 6px 14px;
+            background: #ece9d8;
+            border: 1px solid #999;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            margin-right: 4px;
+            font-weight: 600;
+            position: relative;
+            bottom: -1px;
+            margin-bottom: 2px;
+        }
+        .tab-btn.active {
+            background: #fff;
+            border-top: 2px solid #e13c3c;
+            border-bottom: 1px solid #fff;
+            color: #000;
+        }
+
+        .tab-content {
+            background: #fff;
+            padding: 12px;
+            border: 1px solid #999;
+            border-top: none;
+            margin: 0 10px 10px 10px;
+            border-radius: 0 0 4px 4px;
+        }
+        .tab-pane {
+            display: none;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+
+        .convert-modes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .convert-card {
+            border: 1px solid #c0c0c0;
+            border-radius: 4px;
+            padding: 8px 10px;
+            background: #fdfdfd;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.15s ease;
+        }
+        .convert-card:hover {
+            border-color: #0055ea;
+            background: #f0f7ff;
+        }
+        .convert-card.active {
+            border: 2px solid #0055ea;
+            background: #eef6ff;
+        }
+        .convert-icon {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .convert-title {
+            font-weight: bold;
+            font-size: 11.5px;
+            color: #111;
+        }
+        .convert-desc {
+            font-size: 10.5px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .drop-zone {
+            border: 2px dashed #7f9db9;
+            border-radius: 4px;
+            padding: 14px;
+            text-align: center;
+            background: #fafafa;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .drop-zone.dragover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .option-box {
+            background: #eef7ee;
+            border: 1px solid #a5d6a7;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        fieldset {
+            border: 1px solid #b5b5b5;
+            border-radius: 3px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+        }
+        legend {
+            font-weight: 600;
+            color: #333;
+            padding: 0 4px;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .form-row label {
+            width: 125px;
+            font-weight: 500;
+        }
+        .form-row input[type="text"] {
+            flex: 1;
+            padding: 4px 6px;
+            border: 1px solid #7f9db9;
+            border-radius: 2px;
+        }
+        .btn-action {
+            padding: 5px 14px;
+            border: 1px solid #707070;
+            background: #f2f2f2;
+            cursor: pointer;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        .btn-action:hover {
+            background: #e5e5e5;
+        }
+        .btn-primary {
+            background: linear-gradient(180deg, #fbfbfb 0%, #e1e1e1 100%);
+            border: 1px solid #555;
+            font-weight: bold;
+            padding: 6px 20px;
+            font-size: 12.5px;
+        }
+        .btn-primary:active {
+            background: #ccc;
+        }
+
+        .status-bar {
+            border-top: 1px solid #b5b5b5;
+            padding: 4px 10px;
+            color: #333;
+            font-size: 11px;
+            background: #ece9d8;
+        }
+        .hint {
+            font-size: 11px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        /* Split & Reorder & Merge */
+        .pages-grid-container { display: flex; gap: 10px; margin-bottom: 10px; }
+        .pages-grid { flex: 1; height: 220px; border: 1px solid #7f9db9; background: #f5f5f5; padding: 10px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 12px; align-content: flex-start; }
+        .page-card { width: 105px; background: #fff; border: 2px solid #ccc; border-radius: 4px; padding: 5px; display: flex; flex-direction: column; align-items: center; cursor: pointer; position: relative; }
+        .page-card:hover { border-color: #0055ea; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .page-card.selected { border-color: #e13c3c; background-color: #fff1f1; box-shadow: 0 0 0 2px #e13c3c; }
+        .page-thumb-wrapper { width: 90px; height: 110px; background: #e9e9e9; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #ddd; }
+        .page-thumb-wrapper canvas { max-width: 100%; max-height: 100%; }
+        .page-label { margin-top: 5px; font-weight: bold; font-size: 11px; color: #333; }
+        .page-order-badge { position: absolute; top: -6px; left: -6px; background: #0055ea; color: white; border-radius: 50%; width: 20px; height: 20px; line-height: 20px; text-align: center; font-size: 10px; font-weight: bold; }
+        .table-container { display: flex; gap: 10px; margin-bottom: 10px; position: relative; }
+        .table-wrapper { flex: 1; height: 200px; border: 2px dashed #7f9db9; background-color: #fafafa; overflow-y: auto; position: relative; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #e4e4e4; position: sticky; top: 0; z-index: 1; }
+        th, td { border: 1px solid #d0d0d0; padding: 5px 6px; text-align: left; }
+        tbody tr:hover { background-color: #e5f3ff; cursor: pointer; }
+        tbody tr.selected { background-color: #cce8ff; font-weight: 600; }
+        .side-buttons { display: flex; flex-direction: column; gap: 5px; width: 38px; }
+        .btn-tool { height: 27px; font-size: 13px; font-weight: bold; cursor: pointer; border: 1px solid #707070; background: #f0f0f0; border-radius: 3px; display: flex; align-items: center; justify-content: center; }
+        .btn-clear-all { color: #b91c1c; font-size: 11px; font-weight: 900; background: #fee2e2; border-color: #f87171; }
+        #renderCanvasContainer { position: absolute; left: -9999px; top: -9999px; width: 800px; background: white; padding: 30px; }
+    </style>
+</head>
+<body>
+
+<div class="window">
+    <div class="title-bar">
+        <span>PDF Studio Pro v9.0 - Multi-Engine Document & Scan Converter</span>
+        <div class="title-bar-controls">
+            <span>_</span><span>□</span><span>×</span>
+        </div>
+    </div>
+
+    <div class="banner">
+        <div class="banner-icon">DOC</div>
+        <div class="banner-text">PDF Studio Pro & <span>Office Tools</span></div>
+    </div>
+
+    <div class="tab-bar">
+        <button class="tab-btn active" id="tabConvertBtn" onclick="switchTab('convert')">🔄 Chuyển đổi (Office & Scan)</button>
+        <button class="tab-btn" id="tabReorderBtn" onclick="switchTab('reorder')">📑 Đổi thứ tự trang (Reorder)</button>
+        <button class="tab-btn" id="tabSplitBtn" onclick="switchTab('split')">✂️ Cắt trích trang (Split)</button>
+        <button class="tab-btn" id="tabMergeBtn" onclick="switchTab('merge')">➕ Ghép nối file (Merge)</button>
+    </div>
+
+    <!-- TAB CONTENT -->
+    <div class="tab-content">
+        <!-- TAB 1: CONVERTER -->
+        <div id="paneConvert" class="tab-pane active">
+            <div class="convert-modes">
+                <!-- 1. PDF SCAN SANG WORD (BẢO TOÀN NGUYÊN BẢN ẢNH CHỮ KÝ, CON DẤU) -->
+                <div class="convert-card active" id="mode_pdf_word_scan" onclick="selectConvertMode('pdf_word_scan')">
+                    <div class="convert-icon" style="color: #0055ea;">📷➔📘</div>
+                    <div>
+                        <div class="convert-title">PDF Scan ➔ Word (Bảo toàn trang)</div>
+                        <div class="convert-desc">Giữ nguyên 100% hình ảnh scan, chữ ký, con dấu vào Word</div>
+                    </div>
+                </div>
+
+                <!-- 2. PDF SANG POWERPOINT -->
+                <div class="convert-card" id="mode_pdf_pptx" onclick="selectConvertMode('pdf_pptx')">
+                    <div class="convert-icon" style="color: #d24726;">📄➔📊</div>
+                    <div>
+                        <div class="convert-title">PDF ➔ PowerPoint (.pptx)</div>
+                        <div class="convert-desc">Tạo Slide PowerPoint chuẩn, phủ trọn trang trình chiếu</div>
+                    </div>
+                </div>
+
+                <!-- 3. PDF SANG EXCEL -->
+                <div class="convert-card" id="mode_pdf_excel" onclick="selectConvertMode('pdf_excel')">
+                    <div class="convert-icon" style="color: #217346;">📄➔📗</div>
+                    <div>
+                        <div class="convert-title">PDF ➔ Excel (.xlsx)</div>
+                        <div class="convert-desc">Bóc tách dữ liệu bảng biểu từ PDF có text layer vào bảng tính</div>
+                    </div>
+                </div>
+
+                <!-- 4. PDF SANG BỘ ẢNH HD -->
+                <div class="convert-card" id="mode_pdf_images" onclick="selectConvertMode('pdf_images')">
+                    <div class="convert-icon" style="color: #d97706;">📄➔🖼️</div>
+                    <div>
+                        <div class="convert-title">PDF ➔ Ảnh HD (.png / ZIP)</div>
+                        <div class="convert-desc">Xuất từng trang PDF thành tệp ảnh độ nét cao (300 DPI)</div>
+                    </div>
+                </div>
+
+                <!-- 5. WORD SANG PDF -->
+                <div class="convert-card" id="mode_word_pdf" onclick="selectConvertMode('word_pdf')">
+                    <div class="convert-icon" style="color: #d32f2f;">📘➔📄</div>
+                    <div>
+                        <div class="convert-title">Word (.docx) ➔ PDF</div>
+                        <div class="convert-desc">Chuyển văn bản Word thành file PDF tiêu chuẩn</div>
+                    </div>
+                </div>
+
+                <!-- 6. EXCEL SANG PDF -->
+                <div class="convert-card" id="mode_excel_pdf" onclick="selectConvertMode('excel_pdf')">
+                    <div class="convert-icon" style="color: #d32f2f;">📗➔📄</div>
+                    <div>
+                        <div class="convert-title">Excel (.xlsx) ➔ PDF</div>
+                        <div class="convert-desc">Chuyển bảng tính Excel thành PDF báo cáo khổ ngang</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tùy chọn chất lượng ảnh cho Word Scan / PPTX -->
+            <div class="option-box" id="scanOptionBox">
+                <div><b>⚡ Độ phân giải ảnh nhúng vào tài liệu:</b></div>
+                <label><input type="radio" name="scanQuality" value="2.0" checked> Độ nét cao 200 DPI (Cân đối dung lượng)</label>
+                <label><input type="radio" name="scanQuality" value="3.0"> Siêu nét 300 DPI (In ấn / Lưu trữ chuẩn)</label>
+            </div>
+
+            <div class="drop-zone" id="convertDropZone" onclick="document.getElementById('convertFileInput').click()">
+                <div id="convertZoneText">📁 Kéo & Thả file nguồn vào đây (hoặc click để chọn file)</div>
+            </div>
+            <input type="file" id="convertFileInput" style="display: none;" onchange="handleConvertFile(this.files[0])">
+
+            <fieldset>
+                <legend>Thông tin chuyển đổi</legend>
+                <div class="form-row">
+                    <label>File nguồn:</label>
+                    <input type="text" id="convertSrcNameDisplay" placeholder="Chưa chọn file nguồn..." readonly>
+                </div>
+                <div class="form-row">
+                    <label>Tên file xuất ra:</label>
+                    <input type="text" id="convertOutputName" value="Document_Converted.doc">
+                </div>
+                <div class="hint" id="convertStatusHint">Chế độ này tự động render toàn bộ trang Scan thành ảnh sắc nét và nhúng vào từng trang Word khổ A4 chuẩn.</div>
+            </fieldset>
+
+            <div style="text-align: right;">
+                <button class="btn-action btn-primary" onclick="executeConvert()">Bắt đầu Chuyển đổi & Tải về!</button>
+            </div>
+        </div>
+
+        <!-- TAB 2: REORDER -->
+        <div id="paneReorder" class="tab-pane">
+            <div class="drop-zone" id="reorderDropZone" onclick="document.getElementById('reorderFileInput').click()">
+                <div id="reorderZoneText">📁 Kéo & Thả file PDF cần đổi vị trí trang vào đây (hoặc click để chọn file)</div>
+            </div>
+            <input type="file" id="reorderFileInput" accept="application/pdf" style="display: none;" onchange="handleReorderFile(this.files[0])">
+
+            <div class="pages-grid-container">
+                <div class="pages-grid" id="reorderPagesGrid">
+                    <div style="margin: auto; color: #888; font-style: italic;">Chưa có trang nào. Vui lòng nạp file PDF để hiển thị hình thu nhỏ.</div>
+                </div>
+                <div class="side-buttons">
+                    <button class="btn-tool" onclick="moveSelectedPage(-1)" title="Chuyển sang trái">◀</button>
+                    <button class="btn-tool" onclick="moveSelectedPage(1)" title="Chuyển sang phải">▶</button>
+                    <button class="btn-tool" onclick="jumpToPosition()" title="Nhảy trực tiếp đến vị trí số trang">Vị trí</button>
+                    <button class="btn-tool btn-clear-all" onclick="deleteSelectedPage()" title="Xóa trang">-</button>
+                </div>
+            </div>
+
+            <fieldset>
+                <legend>Cấu hình xuất file sau khi đổi thứ tự</legend>
+                <div class="form-row">
+                    <label>Thứ tự hiện tại:</label>
+                    <input type="text" id="reorderSequenceText" readonly style="background:#f0f0f0; color:#555;">
+                </div>
+                <div class="form-row">
+                    <label>Tên file kết quả:</label>
+                    <input type="text" id="reorderOutputName" value="Reordered_Document.pdf">
+                </div>
+            </fieldset>
+            
+            <div style="text-align: right;">
+                <button class="btn-action btn-primary" onclick="executeReorderSave()">Lưu & Tải PDF mới!</button>
+            </div>
+        </div>
+
+        <!-- TAB 3: SPLIT -->
+        <div id="paneSplit" class="tab-pane">
+            <div class="drop-zone" id="splitDropZone" onclick="document.getElementById('splitFileInput').click()">
+                <div id="splitZoneText">📁 Kéo & Thả file PDF cần cắt vào đây (hoặc click để chọn file)</div>
+            </div>
+            <input type="file" id="splitFileInput" accept="application/pdf" style="display: none;" onchange="handleSplitFile(this.files[0])">
+
+            <fieldset>
+                <legend>Thông tin file nguồn</legend>
+                <div class="form-row">
+                    <label>File đã chọn:</label>
+                    <input type="text" id="splitFileNameDisplay" placeholder="Chưa có file nào..." readonly>
+                </div>
+                <div class="hint" id="splitFileInfo">Chưa tải file.</div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Tùy chọn cắt trích (Extract)</legend>
+                <div class="form-row">
+                    <label>Trang cần lấy:</label>
+                    <input type="text" id="splitPageRanges" placeholder="Ví dụ: 1-3, 5, 8-10">
+                </div>
+                <div class="hint">Nhập số trang cụ thể hoặc khoảng cách (Ví dụ: <b>1-2</b> hoặc <b>1, 3, 4</b>).</div>
+                <div class="form-row" style="margin-top: 10px;">
+                    <label>Tên file xuất:</label>
+                    <input type="text" id="splitOutputName" value="Extracted_Pages.pdf">
+                </div>
+            </fieldset>
+
+            <div style="text-align: right;">
+                <button class="btn-action btn-primary" onclick="executeSplit()">Extract Pages! (Trích trang)</button>
+            </div>
+        </div>
+
+        <!-- TAB 4: MERGE -->
+        <div id="paneMerge" class="tab-pane">
+            <div class="table-container">
+                <div class="table-wrapper" id="mergeDropZone">
+                    <div class="drag-placeholder" id="mergePlaceholder">
+                        📁 Kéo & Thả các file PDF vào đây<br>hoặc bấm nút [+] bên phải
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 35px;">#</th>
+                                <th>Tên File</th>
+                                <th style="width: 110px;">Tổng số trang</th>
+                                <th style="width: 90px;">Dung lượng</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mergeTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="side-buttons">
+                    <button class="btn-tool" onclick="document.getElementById('mergeFileInput').click()" title="Thêm file (+)">+</button>
+                    <button class="btn-tool" onclick="removeSelectedMergeFile()" title="Xóa file (-)">-</button>
+                    <button class="btn-tool btn-clear-all" onclick="clearAllMergeFiles()" title="Xóa hết">CLR</button>
+                    <button class="btn-tool" onclick="moveMergeFile(-1)" title="Lên">▲</button>
+                    <button class="btn-tool" onclick="moveMergeFile(1)" title="Xuống">▼</button>
+                </div>
+            </div>
+            <input type="file" id="mergeFileInput" accept="application/pdf" multiple style="display: none;" onchange="handleMergeFiles(this.files)">
+
+            <fieldset>
+                <legend>Cấu hình xuất file</legend>
+                <div class="form-row">
+                    <label>Tên file kết quả:</label>
+                    <input type="text" id="mergeOutputName" value="Merged_Document.pdf">
+                </div>
+            </fieldset>
+            
+            <div style="text-align: right;">
+                <button class="btn-action btn-primary" onclick="executeMerge()">Merge files! (Ghép file)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Container for Document Rendering -->
+    <div id="renderCanvasContainer"></div>
+
+    <div class="status-bar" id="statusBar">Sẵn sàng</div>
+</div>
+
+<script>
+    const { PDFDocument } = PDFLib;
+
+    let currentConvertMode = 'pdf_word_scan';
+    let currentConvertFile = null;
+
+    let mergeFileList = [];
+    let selectedMergeIndex = -1;
+
+    let currentSplitFile = null;
+    let splitTotalPages = 0;
+
+    let currentReorderFile = null;
+    let reorderPages = [];
+    let selectedPageIndex = -1;
+
+    function switchTab(tab) {
+        ['convert', 'reorder', 'split', 'merge'].forEach(t => {
+            const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Btn`);
+            const pane = document.getElementById(`pane${t.charAt(0).toUpperCase() + t.slice(1)}`);
+            if (btn && pane) {
+                if (t === tab) {
+                    btn.classList.add('active');
+                    pane.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                    pane.classList.remove('active');
+                }
+            }
+        });
+        setStatusBar(`Đã chuyển sang tab: ${tab.toUpperCase()}`);
+    }
+
+    function setStatusBar(msg) {
+        document.getElementById('statusBar').innerText = msg;
+    }
+
+    /* --- CONVERTER TAB LOGIC --- */
+    function selectConvertMode(mode) {
+        currentConvertMode = mode;
+        ['pdf_word_scan', 'pdf_pptx', 'pdf_excel', 'pdf_images', 'word_pdf', 'excel_pdf'].forEach(m => {
+            const el = document.getElementById(`mode_${m}`);
+            if (el) el.classList.toggle('active', m === mode);
+        });
+
+        const fileInput = document.getElementById('convertFileInput');
+        const outputName = document.getElementById('convertOutputName');
+        const zoneText = document.getElementById('convertZoneText');
+        const scanBox = document.getElementById('scanOptionBox');
+
+        scanBox.style.display = (mode === 'pdf_word_scan' || mode === 'pdf_pptx' || mode === 'pdf_images') ? 'flex' : 'none';
+
+        if (mode === 'pdf_word_scan') {
+            fileInput.accept = '.pdf';
+            outputName.value = 'Document_Scan.doc';
+            zoneText.innerHTML = '📁 Kéo & Thả file <b>PDF Scan / Ảnh</b> vào đây để chuyển sang <b>Word (Bảo toàn 100% hình ảnh scan)</b>';
+        } else if (mode === 'pdf_pptx') {
+            fileInput.accept = '.pdf';
+            outputName.value = 'Presentation_Converted.pptx';
+            zoneText.innerHTML = '📁 Kéo & Thả file <b>PDF</b> vào đây để chuyển sang <b>PowerPoint (.pptx)</b>';
+        } else if (mode === 'pdf_excel') {
+            fileInput.accept = '.pdf';
+            outputName.value = 'Converted_Data.xlsx';
+            zoneText.innerHTML = '📁 Kéo & Thả file <b>PDF</b> vào đây để bóc tách <b>Excel (.xlsx)</b>';
+        } else if (mode === 'pdf_images') {
+            fileInput.accept = '.pdf';
+            outputName.value = 'PDF_Images_HD.zip';
+            zoneText.innerHTML = '📁 Kéo & Thả file <b>PDF</b> vào đây để xuất <b>Bộ ảnh HD (.png / ZIP)</b>';
+        } else if (mode === 'word_pdf') {
+            fileInput.accept = '.docx';
+            outputName.value = 'Document.pdf';
+            zoneText.innerHTML = '📁 Kéo & Thả file <b>Word (.docx)</b> vào đây để chuyển sang <b>PDF</b>';
+        } else if (mode === 'excel_pdf') {
+            fileInput.accept = '.xlsx, .xls, .csv';
+            outputName.value = 'Table.pdf';
+            zoneText.innerHTML = '📁 Kéo & Thả file <b>Excel (.xlsx / .csv)</b> vào đây để chuyển sang <b>PDF</b>';
+        }
+    }
+
+    function handleConvertFile(file) {
+        if (!file) return;
+        currentConvertFile = file;
+        document.getElementById('convertSrcNameDisplay').value = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        document.getElementById('convertZoneText').innerHTML = `✅ Đã nhận file nguồn: <b>${file.name}</b>`;
+        
+        let baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+        const outputName = document.getElementById('convertOutputName');
+        
+        if (currentConvertMode === 'pdf_word_scan') outputName.value = `${baseName}_Scan.doc`;
+        else if (currentConvertMode === 'pdf_pptx') outputName.value = `${baseName}.pptx`;
+        else if (currentConvertMode === 'pdf_excel') outputName.value = `${baseName}.xlsx`;
+        else if (currentConvertMode === 'pdf_images') outputName.value = `${baseName}_Images.zip`;
+        else if (currentConvertMode === 'word_pdf' || currentConvertMode === 'excel_pdf') outputName.value = `${baseName}.pdf`;
+
+        setStatusBar(`Đã nạp file: ${file.name}. Nhấn nút Chuyển đổi để hoàn tất.`);
+    }
+
+    async function executeConvert() {
+        if (!currentConvertFile) {
+            alert("Vui lòng chọn hoặc kéo thả file nguồn cần chuyển đổi.");
+            return;
+        }
+
+        setStatusBar("Đang tiến hành xử lý tài liệu...");
+        const outName = document.getElementById('convertOutputName').value.trim();
+
+        try {
+            if (currentConvertMode === 'pdf_word_scan') {
+                await convertPdfScanToWord(currentConvertFile, outName);
+            } else if (currentConvertMode === 'pdf_pptx') {
+                await convertPdfToPptx(currentConvertFile, outName);
+            } else if (currentConvertMode === 'pdf_excel') {
+                await convertPdfToExcelSmart(currentConvertFile, outName);
+            } else if (currentConvertMode === 'pdf_images') {
+                await convertPdfToImagesZip(currentConvertFile, outName);
+            } else if (currentConvertMode === 'word_pdf') {
+                await convertWordToPdf(currentConvertFile, outName);
+            } else if (currentConvertMode === 'excel_pdf') {
+                await convertExcelToPdf(currentConvertFile, outName);
+            }
+            setStatusBar("Chuyển đổi thành công và đã tải file về máy!");
+        } catch (err) {
+            alert("Lỗi trong quá trình chuyển đổi: " + err.message);
+            setStatusBar("Chuyển đổi thất bại.");
+        }
+    }
+
+    // 1. CHUYỂN ĐỔI PDF SCAN SANG WORD DẠNG ẢNH TRANG CHUẨN A4
+    async function convertPdfScanToWord(file, outputFilename) {
+        setStatusBar("Đang render các trang Scan thành ảnh chất lượng cao để đưa vào Word...");
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const scale = parseFloat(document.querySelector('input[name="scanQuality"]:checked').value || 2.0);
+
+        let htmlBody = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            setStatusBar(`Đang xử lý trang scan ${i} / ${pdf.numPages}...`);
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: scale });
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+            const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            const isLandscape = viewport.width > viewport.height;
+            const orientationStyle = isLandscape ? 'size: 297mm 210mm; mso-page-orientation: landscape;' : 'size: 210mm 297mm; mso-page-orientation: portrait;';
+
+            htmlBody += `
+            <div style="page-break-after:always; margin: 0 auto; text-align: center; ${orientationStyle}">
+                <img src="${imgDataUrl}" style="max-width: 100%; height: auto;" />
+            </div>`;
+        }
+
+        const fullDoc = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Scan Document</title>
+            <style>
+                @page { margin: 8mm; size: portrait; }
+                body { margin: 0; padding: 0; background: #fff; }
+            </style>
+        </head>
+        <body>${htmlBody}</body></html>`;
+
+        const blob = new Blob(['\ufeff' + fullDoc], { type: 'application/msword;charset=utf-8' });
+        downloadBlob(blob, outputFilename.endsWith('.doc') ? outputFilename : outputFilename.replace(/\.[^/.]+$/, "") + '.doc');
+    }
+
+    // 2. CHUYỂN ĐỔI PDF SANG POWERPOINT (.PPTX)
+    async function convertPdfToPptx(file, outputFilename) {
+        setStatusBar("Đang chuyển đổi PDF sang PowerPoint (.pptx)...");
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const scale = parseFloat(document.querySelector('input[name="scanQuality"]:checked').value || 2.0);
+
+        let pptx = new PptxGenJS();
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            setStatusBar(`Đang tạo Slide PowerPoint cho trang ${i} / ${pdf.numPages}...`);
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: scale });
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            const imgDataUrl = canvas.toDataURL('image/png');
+
+            let slide = pptx.addSlide();
+            slide.addImage({ data: imgDataUrl, x: 0, y: 0, w: "100%", h: "100%" });
+        }
+
+        setStatusBar("Đang xuất file PowerPoint (.pptx)...");
+        const cleanName = outputFilename.endsWith('.pptx') ? outputFilename : outputFilename.replace(/\.[^/.]+$/, "") + '.pptx';
+        await pptx.writeFile({ fileName: cleanName });
+    }
+
+    // 3. CHUYỂN ĐỔI PDF SANG EXCEL
+    async function convertPdfToExcelSmart(file, outputFilename) {
+        setStatusBar("Đang bóc tách dữ liệu PDF sang Excel...");
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const wb = XLSX.utils.book_new();
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            
+            const lines = [];
+            textContent.items.forEach(item => {
+                let text = item.str.trim();
+                if (!text) return;
+                const y = item.transform[5];
+                const x = item.transform[4];
+                let foundLine = lines.find(l => Math.abs(l.y - y) <= 4.5);
+                if (foundLine) foundLine.items.push({ x, str: text });
+                else lines.push({ y, items: [{ x, str: text }] });
+            });
+
+            lines.sort((a, b) => b.y - a.y);
+            const pageRows = [];
+            pageRows.push([`=== TRANG ${i} / ${pdf.numPages} ===`]);
+
+            for (let line of lines) {
+                line.items.sort((a, b) => a.x - b.x);
+                let rowCells = [];
+                let lastX = null;
+
+                for (let it of line.items) {
+                    if (lastX === null || (it.x - lastX) > 18) {
+                        rowCells.push(it.str);
+                    } else {
+                        rowCells[rowCells.length - 1] += " " + it.str;
+                    }
+                    lastX = it.x + (it.str.length * 5.5);
+                }
+                if (rowCells.length > 0) pageRows.push(rowCells);
+            }
+
+            const ws = XLSX.utils.aoa_to_sheet(pageRows);
+            XLSX.utils.book_append_sheet(wb, ws, `Trang_${i}`);
+        }
+
+        XLSX.writeFile(wb, outputFilename.endsWith('.xlsx') ? outputFilename : outputFilename + '.xlsx');
+    }
+
+    // 4. XUẤT TOÀN BỘ TRANG PDF THÀNH ZIP CHỨA ẢNH HD
+    async function convertPdfToImagesZip(file, outputFilename) {
+        setStatusBar("Đang render ảnh HD các trang PDF...");
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const scale = parseFloat(document.querySelector('input[name="scanQuality"]:checked').value || 2.5);
+        const zip = new JSZip();
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            setStatusBar(`Đang tạo ảnh chất lượng cao trang ${i} / ${pdf.numPages}...`);
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: scale });
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            
+            const dataUrl = canvas.toDataURL('image/png');
+            const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
+            zip.file(`Trang_${i}.png`, base64Data, { base64: true });
+        }
+
+        setStatusBar("Đang đóng gói file ZIP...");
+        const content = await zip.generateAsync({ type: "blob" });
+        downloadBlob(content, outputFilename.endsWith('.zip') ? outputFilename : outputFilename + '.zip');
+    }
+
+    // 5. WORD SANG PDF
+    async function convertWordToPdf(file, outputFilename) {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
+        const html = result.value;
+
+        const container = document.getElementById('renderCanvasContainer');
+        container.innerHTML = `<div style="font-family: Arial, sans-serif; font-size:13px; line-height:1.6; color:#000;">${html}</div>`;
+
+        const canvas = await html2canvas(container, { scale: 2 });
+        container.innerHTML = '';
+
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        let heightLeft = pdfHeight;
+        let position = 0;
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+            position = heightLeft - pdfHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pageHeight;
+        }
+
+        pdf.save(outputFilename.endsWith('.pdf') ? outputFilename : outputFilename + '.pdf');
+    }
+
+    // 6. EXCEL SANG PDF
+    async function convertExcelToPdf(file, outputFilename) {
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const htmlTable = XLSX.utils.sheet_to_html(worksheet, { id: 'excel-table' });
+
+        const container = document.getElementById('renderCanvasContainer');
+        container.innerHTML = `
+            <div style="font-family: Arial, sans-serif; padding:10px;">
+                <h3 style="margin-top:0;">Sheet: ${firstSheetName}</h3>
+                <style>
+                    table { border-collapse: collapse; width: 100%; font-size: 11px; }
+                    td, th { border: 1px solid #777; padding: 4px 6px; text-align: left; }
+                    th { background: #eee; }
+                </style>
+                ${htmlTable}
+            </div>`;
+
+        const canvas = await html2canvas(container, { scale: 2 });
+        container.innerHTML = '';
+
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('l', 'mm', 'a4');
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        let heightLeft = pdfHeight;
+        let position = 0;
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+            position = heightLeft - pdfHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pageHeight;
+        }
+
+        pdf.save(outputFilename.endsWith('.pdf') ? outputFilename : outputFilename + '.pdf');
+    }
+
+    /* --- DRAG & DROP INITIALIZATION --- */
+    function setupDragAndDrop() {
+        const convertZone = document.getElementById('convertDropZone');
+        const reorderZone = document.getElementById('reorderDropZone');
+        const splitZone = document.getElementById('splitDropZone');
+        const mergeZone = document.getElementById('mergeDropZone');
+
+        function bindEvents(zone, callback) {
+            if (!zone) return;
+            ['dragenter', 'dragover'].forEach(name => {
+                zone.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    zone.classList.add('dragover');
+                });
+            });
+            ['dragleave', 'drop'].forEach(name => {
+                zone.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    zone.classList.remove('dragover');
+                });
+            });
+            zone.addEventListener('drop', (e) => {
+                const files = Array.from(e.dataTransfer.files);
+                if (files.length > 0) callback(files);
+            });
+        }
+
+        bindEvents(convertZone, (files) => handleConvertFile(files[0]));
+        bindEvents(reorderZone, (files) => handleReorderFile(files[0]));
+        bindEvents(splitZone, (files) => handleSplitFile(files[0]));
+        bindEvents(mergeZone, (files) => handleMergeFiles(files));
+
+        window.addEventListener('dragover', (e) => e.preventDefault());
+        window.addEventListener('drop', (e) => e.preventDefault());
+    }
+
+    /* --- TAB REORDER --- */
+    async function handleReorderFile(file) {
+        if (!file) return;
+        currentReorderFile = file;
+        document.getElementById('reorderZoneText').innerHTML = `✅ Đang nạp & tạo hình thu nhỏ: <b>${file.name}</b>...`;
+        setStatusBar("Đang đọc file PDF...");
+
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+            const numPages = pdfDoc.numPages;
+
+            reorderPages = [];
+            selectedPageIndex = -1;
+
+            for (let i = 1; i <= numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                const viewport = page.getViewport({ scale: 0.25 });
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+                reorderPages.push({ origIndex: i - 1, canvas: canvas });
+            }
+
+            document.getElementById('reorderZoneText').innerHTML = `✅ Đã nhận file: <b>${file.name}</b> (${numPages} trang)`;
+            renderReorderGrid();
+            setStatusBar(`Đã nạp ${numPages} trang.`);
+        } catch (err) {
+            alert("Lỗi khi đọc file: " + err.message);
+        }
+    }
+
+    function renderReorderGrid() {
+        const grid = document.getElementById('reorderPagesGrid');
+        grid.innerHTML = '';
+        if (reorderPages.length === 0) {
+            grid.innerHTML = '<div style="margin: auto; color: #888; font-style: italic;">Chưa có trang nào.</div>';
+            document.getElementById('reorderSequenceText').value = '';
+            return;
+        }
+
+        reorderPages.forEach((p, idx) => {
+            const card = document.createElement('div');
+            card.className = 'page-card' + (idx === selectedPageIndex ? ' selected' : '');
+            card.onclick = () => { selectedPageIndex = idx; renderReorderGrid(); };
+
+            const badge = document.createElement('div');
+            badge.className = 'page-order-badge';
+            badge.innerText = idx + 1;
+
+            const thumb = document.createElement('div');
+            thumb.className = 'page-thumb-wrapper';
+            thumb.appendChild(p.canvas.cloneNode(true));
+            const ctx = thumb.querySelector('canvas').getContext('2d');
+            ctx.drawImage(p.canvas, 0, 0);
+
+            const label = document.createElement('div');
+            label.className = 'page-label';
+            label.innerText = `Trang ${p.origIndex + 1}`;
+
+            card.appendChild(badge);
+            card.appendChild(thumb);
+            card.appendChild(label);
+            grid.appendChild(card);
+        });
+
+        document.getElementById('reorderSequenceText').value = reorderPages.map(p => `Trang ${p.origIndex + 1}`).join(' ➔ ');
+    }
+
+    function moveSelectedPage(delta) {
+        if (selectedPageIndex < 0) return alert("Vui lòng chọn 1 trang.");
+        const target = selectedPageIndex + delta;
+        if (target >= 0 && target < reorderPages.length) {
+            const temp = reorderPages[selectedPageIndex];
+            reorderPages[selectedPageIndex] = reorderPages[target];
+            reorderPages[target] = temp;
+            selectedPageIndex = target;
+            renderReorderGrid();
+        }
+    }
+
+    function jumpToPosition() {
+        if (selectedPageIndex < 0) return alert("Vui lòng chọn 1 trang.");
+        const curPos = selectedPageIndex + 1;
+        const input = prompt(`Nhập số thứ tự vị trí mới (1 - ${reorderPages.length}):`, "1");
+        if (!input) return;
+        const targetPos = parseInt(input, 10);
+        if (isNaN(targetPos) || targetPos < 1 || targetPos > reorderPages.length) return alert("Vị trí không hợp lệ!");
+
+        const targetIndex = targetPos - 1;
+        const [item] = reorderPages.splice(selectedPageIndex, 1);
+        reorderPages.splice(targetIndex, 0, item);
+        selectedPageIndex = targetIndex;
+        renderReorderGrid();
+    }
+
+    function deleteSelectedPage() {
+        if (selectedPageIndex < 0) return alert("Vui lòng chọn 1 trang.");
+        if (confirm(`Bỏ trang gốc ${reorderPages[selectedPageIndex].origIndex + 1} khỏi file xuất?`)) {
+            reorderPages.splice(selectedPageIndex, 1);
+            selectedPageIndex = -1;
+            renderReorderGrid();
+        }
+    }
+
+    async function executeReorderSave() {
+        if (!currentReorderFile || reorderPages.length === 0) return alert("Chưa có dữ liệu.");
+        setStatusBar("Đang lưu PDF thứ tự mới...");
+        try {
+            const bytes = await currentReorderFile.arrayBuffer();
+            const srcPdf = await PDFDocument.load(bytes);
+            const newPdf = await PDFDocument.create();
+
+            const indices = reorderPages.map(p => p.origIndex);
+            const copiedPages = await newPdf.copyPages(srcPdf, indices);
+            copiedPages.forEach(p => newPdf.addPage(p));
+
+            const newBytes = await newPdf.save();
+            downloadBlob(newBytes, document.getElementById('reorderOutputName').value || 'Reordered.pdf');
+            setStatusBar("Xuất PDF thành công!");
+        } catch (err) {
+            alert("Lỗi: " + err.message);
+        }
+    }
+
+    /* --- TAB SPLIT --- */
+    async function handleSplitFile(file) {
+        if (!file) return;
+        currentSplitFile = file;
+        document.getElementById('splitFileNameDisplay').value = file.name;
+        document.getElementById('splitZoneText').innerHTML = `✅ Đã nhận file: <b>${file.name}</b>`;
+        try {
+            const bytes = await file.arrayBuffer();
+            const pdf = await PDFDocument.load(bytes);
+            splitTotalPages = pdf.getPageCount();
+            document.getElementById('splitFileInfo').innerHTML = `File hợp lệ: <b>${file.name}</b> (Tổng: <b>${splitTotalPages}</b> trang).`;
+            setStatusBar(`Đã nạp file (${splitTotalPages} trang).`);
+        } catch (e) {
+            alert("Không đọc được file PDF.");
+        }
+    }
+
+    function parsePageRanges(rangeStr, maxPages) {
+        const pages = [];
+        const parts = rangeStr.split(/[,;\s]+/);
+        for (let part of parts) {
+            if (!part) continue;
+            if (part.includes('-')) {
+                const [s, e] = part.split('-');
+                const start = parseInt(s, 10), end = parseInt(e, 10);
+                if (isNaN(start) || isNaN(end) || start < 1 || end > maxPages || start > end) {
+                    throw new Error(`Khoảng trang không hợp lệ: "${part}"`);
+                }
+                for (let i = start; i <= end; i++) pages.push(i - 1);
+            } else {
+                const p = parseInt(part, 10);
+                if (isNaN(p) || p < 1 || p > maxPages) throw new Error(`Số trang không hợp lệ: "${part}"`);
+                pages.push(p - 1);
+            }
+        }
+        return pages;
+    }
+
+    async function executeSplit() {
+        if (!currentSplitFile) return alert("Chưa chọn file.");
+        const rangeText = document.getElementById('splitPageRanges').value.trim();
+        if (!rangeText) return alert("Vui lòng nhập trang cần cắt.");
+
+        try {
+            const pageIndices = parsePageRanges(rangeText, splitTotalPages);
+            const bytes = await currentSplitFile.arrayBuffer();
+            const srcPdf = await PDFDocument.load(bytes);
+            const newPdf = await PDFDocument.create();
+
+            const copiedPages = await newPdf.copyPages(srcPdf, pageIndices);
+            copiedPages.forEach(p => newPdf.addPage(p));
+
+            const newBytes = await newPdf.save();
+            downloadBlob(newBytes, document.getElementById('splitOutputName').value || 'Extracted.pdf');
+            setStatusBar(`Trích xuất thành công ${pageIndices.length} trang!`);
+        } catch (err) {
+            alert("Lỗi: " + err.message);
+        }
+    }
+
+    /* --- TAB MERGE --- */
+    async function handleMergeFiles(files) {
+        for (let file of files) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+                mergeFileList.push({ file: file, pageCount: pdf.getPageCount() });
+            } catch (err) {
+                alert("Không thể đọc file: " + file.name);
+            }
+        }
+        renderMergeTable();
+        document.getElementById('mergeFileInput').value = '';
+    }
+
+    function renderMergeTable() {
+        const tbody = document.getElementById('mergeTableBody');
+        const placeholder = document.getElementById('mergePlaceholder');
+        tbody.innerHTML = '';
+        placeholder.style.display = mergeFileList.length === 0 ? 'block' : 'none';
+
+        mergeFileList.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            if (index === selectedMergeIndex) tr.className = 'selected';
+            tr.onclick = () => { selectedMergeIndex = index; renderMergeTable(); };
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${item.file.name}</td>
+                <td>${item.pageCount} trang</td>
+                <td>${(item.file.size / 1024).toFixed(1)} KB</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function removeSelectedMergeFile() {
+        if (selectedMergeIndex >= 0 && selectedMergeIndex < mergeFileList.length) {
+            mergeFileList.splice(selectedMergeIndex, 1);
+            selectedMergeIndex = -1;
+            renderMergeTable();
+        }
+    }
+
+    function clearAllMergeFiles() {
+        if (mergeFileList.length === 0) return;
+        if (confirm("Xóa toàn bộ danh sách file đang ghép?")) {
+            mergeFileList = [];
+            selectedMergeIndex = -1;
+            renderMergeTable();
+        }
+    }
+
+    function moveMergeFile(dir) {
+        if (selectedMergeIndex < 0) return;
+        const target = selectedMergeIndex + dir;
+        if (target >= 0 && target < mergeFileList.length) {
+            const temp = mergeFileList[selectedMergeIndex];
+            mergeFileList[selectedMergeIndex] = mergeFileList[target];
+            mergeFileList[target] = temp;
+            selectedMergeIndex = target;
+            renderMergeTable();
+        }
+    }
+
+    async function executeMerge() {
+        if (mergeFileList.length < 2) return alert("Cần tối thiểu 2 file PDF.");
+        setStatusBar("Đang ghép file PDF...");
+        try {
+            const mergedPdf = await PDFDocument.create();
+            for (let item of mergeFileList) {
+                const bytes = await item.file.arrayBuffer();
+                const pdf = await PDFDocument.load(bytes);
+                const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                copiedPages.forEach(p => mergedPdf.addPage(p));
+            }
+            const mergedBytes = await mergedPdf.save();
+            downloadBlob(mergedBytes, document.getElementById('mergeOutputName').value || 'Merged.pdf');
+            setStatusBar("Ghép file hoàn tất!");
+        } catch (err) {
+            alert("Lỗi: " + err.message);
+        }
+    }
+
+    function downloadBlob(data, fileName) {
+        const blob = data instanceof Blob ? data : new Blob([data], { type: 'application/octet-stream' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        link.click();
+    }
+
+    setupDragAndDrop();
+    selectConvertMode('pdf_word_scan');
+</script>
+</body>
+</html>
